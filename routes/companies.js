@@ -1,4 +1,4 @@
-"use strict"
+"use strict";
 
 const express = require("express");
 const { NotFoundError } = require("../expressError");
@@ -7,8 +7,10 @@ const router = new express.Router();
 
 router.use(express.json());
 
+// TODO: doc string should include result from instructions
+// TODO: ORDER by primary key in queries
 /**Route to get all companies from API. */
-router.get('/', async function(req, res) {
+router.get('/', async function (req, res) {
   const result = await db.query(
     `SELECT code, name
       FROM companies;`
@@ -18,10 +20,10 @@ router.get('/', async function(req, res) {
 
   return res.json({
     companies: rows
-  })
-})
+  });
+});
 
-
+// TODO: error handle if something doesn't exist after query
 /**Route to get the information for a specific company */
 router.get('/:code', async function (req, res) {
   const code = req.params.code;
@@ -34,48 +36,49 @@ router.get('/:code', async function (req, res) {
 
   return res.json({
     company: result.rows[0]
-  })
-})
+  });
+});
 
 
 /**Route to create a company. */
-router.post("/", async function(req,res){
-  const {code, name, description} = req.body;
+router.post("/", async function (req, res) {
+  const { code, name, description } = req.body;
 
   const result = await db.query(
     `INSERT into companies(code, name, description)
      VALUES ($1,$2,$3)
      RETURNING code, name, description
-    `, [code,name,description]);
-    const company = result.rows[0]
+    `, [code, name, description]);
+  const company = result.rows[0];
 
-    return res.status(201).json({company})
-})
+  return res.status(201).json({ company });
+});
 
 
 /** Route to update a company */
-router.put("/:code", async function(req,res){
+router.put("/:code", async function (req, res) {
   const code = req.params.code;
-  const {name, description} = req.body
+  const { name, description } = req.body;
 
   const result = await db.query(
-   `UPDATE companies
+    `UPDATE companies
     SET name = $1,
          description = $2
     WHERE code = $3
     RETURNING code, name, description
     `, [name, description, code]
   );
-  const company = result.rows[0]
+  const company = result.rows[0];
 
-  if(company)return res.json({company});
-
+  if (company) return res.json({ company });
+// TODO: make sure error is thrown first
+// TODO: include message on NotFoundError
   throw new NotFoundError();
-})
+});
 
 
 /** Route to delete a company. */
-router.delete('/:code', async function(req, res) {
+router.delete('/:code', async function (req, res) {
   const code = req.params.code;
 
   const result = await db.query(
@@ -83,11 +86,11 @@ router.delete('/:code', async function(req, res) {
       WHERE code = $1
       RETURNING code, name, description`, [code]
   );
-  const company = result.rows[0]
+  const company = result.rows[0];
 
-  if(company)return res.json({"status": "Deleted"});
+  if (company) return res.json({ status: "Deleted" });
 
-throw new NotFoundError();
-})
+  throw new NotFoundError();
+});
 
 module.exports = router;
