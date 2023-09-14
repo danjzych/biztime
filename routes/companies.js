@@ -23,20 +23,53 @@ router.get('/', async function (req, res) {
   });
 });
 
-// TODO: error handle if something doesn't exist after query
-/**Route to get the information for a specific company */
+
+/**
+ * takes code from url params
+ * returns company info and invoices associated with it
+ *{
+  "company": {
+    "code": "apple",
+    "name": "Apple Computer",
+    "invoices": [
+      {
+        "id": 1,
+        "comp_code": "apple",
+        "amt": "100.00",
+        "paid": false,
+        "add_date": "2023-09-14T04:00:00.000Z",
+        "paid_date": null
+      }
+    ]
+  }
+};
+ */
 router.get('/:code', async function (req, res) {
   const code = req.params.code;
 
-  const result = await db.query(
+  const cResult = await db.query(
     `SELECT code, name
       FROM companies
       WHERE code = $1;`, [code]
   );
 
-  return res.json({
-    company: result.rows[0]
-  });
+  const iResult = await db.query(
+    // TODO: only need id's of invoices
+    `
+    SELECT id, comp_code, amt, paid, add_date, paid_date
+    FROM invoices
+    WHERE comp_code = $1
+    `, [code]
+  );
+  const company = cResult.rows[0];
+  if (!company) throw new NotFoundError('Unable to find company');
+  company.invoices = iResult.rows;
+
+  return res.json({ company });
+
+  // return res.json({
+  //   company: result.rows[0]
+  // });
 });
 
 
@@ -71,8 +104,8 @@ router.put("/:code", async function (req, res) {
   const company = result.rows[0];
 
   if (company) return res.json({ company });
-// TODO: make sure error is thrown first
-// TODO: include message on NotFoundError
+  // TODO: make sure error is thrown first
+  // TODO: include message on NotFoundError
   throw new NotFoundError();
 });
 
