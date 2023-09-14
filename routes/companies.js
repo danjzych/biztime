@@ -37,6 +37,8 @@ router.get('/:code', async function (req, res) {
   })
 })
 
+
+/**Route to create a company. */
 router.post("/", async function(req,res){
   const {code, name, description} = req.body;
 
@@ -50,6 +52,8 @@ router.post("/", async function(req,res){
     return res.status(201).json({company})
 })
 
+
+/** Route to update a company */
 router.put("/:code", async function(req,res){
   const code = req.params.code;
   const {name, description} = req.body
@@ -67,7 +71,23 @@ router.put("/:code", async function(req,res){
   if(company)return res.json({company});
 
   throw new NotFoundError();
+})
 
+
+/** Route to delete a company. */
+router.delete('/:code', async function(req, res) {
+  const code = req.params.code;
+
+  const result = await db.query(
+    `DELETE FROM companies
+      WHERE code = $1
+      RETURNING code, name, description`, [code]
+  );
+  const company = result.rows[0]
+
+  if(company)return res.json({"status": "Deleted"});
+
+throw new NotFoundError();
 })
 
 module.exports = router;
